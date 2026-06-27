@@ -1,19 +1,19 @@
-import { User } from "./models/User";
-import { Logger } from "./services/Logger";
-import { EmailNotification } from "./services/EmailNotification";
-import { SMSNotification } from "./services/SMSNotification";
-import { PushNotification } from "./services/PushNotification";
-import { NotificationService } from "./services/NotificationService";
-import { INotificationChannel } from "./core/interfaces";
+/// <reference types="node" />
+import { StripeFactory } from "./providers/stripe/StripeFactory";
+import { PaypalFactory } from "./providers/paypal/PaypalFactory";
+import { AppleFactory } from "./providers/apple/AppleFactory";
+import { PaymentContext } from "./app/PaymentContext";
 
-const user = new User("user@example.com", "+1234567890", "device-token-123");
-const logger = new Logger();
+const provider = process.argv[2]?.toLowerCase() || "stripe";
 
-const channels: INotificationChannel[] = [
-  new EmailNotification(user.email, logger),
-  new SMSNotification(user.phone, logger),
-  new PushNotification(user.deviceToken, logger),
-];
+const factories = {
+  stripe: new StripeFactory(),
+  paypal: new PaypalFactory(),
+  apple: new AppleFactory(),
+};
 
-const notifier = new NotificationService(channels);
-notifier.notify("Ваш платіж оброблено успішно!");
+const factory =
+  factories[provider as keyof typeof factories] ?? new StripeFactory();
+
+const context = new PaymentContext(factory);
+context.processPayment(100);
